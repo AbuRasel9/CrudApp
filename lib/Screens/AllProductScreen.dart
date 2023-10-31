@@ -1,5 +1,8 @@
+import 'dart:convert';
+
+import 'package:crud_app/Screens/AddProductScreen.dart';
 import 'package:flutter/material.dart';
-import 'http';
+import "package:http/http.dart" as http;
 
 class AllProductScreen extends StatefulWidget {
   const AllProductScreen({super.key});
@@ -10,54 +13,110 @@ class AllProductScreen extends StatefulWidget {
 
 class _AllProductScreenState extends State<AllProductScreen> {
   ProductListPojo? allProduct;
-  getProductListFormApi(){
-    String url="https://crud.teamrabbil.com/api/v1/ReadProduct";
-    Uri uri =Uri.parse(url);
 
 
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getProductListFormApi();
   }
+  //delete product form api
+  deleteProductFormApi(id) async {
+    String url="https://crud.teamrabbil.com/api/v1/DeleteProduct/$id";
+    Uri uri=Uri.parse(url);
+    http.Response response=await http.get(uri);
+    if(response.statusCode==200){
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Product Delete Successfull")));
+      Navigator.push(context, MaterialPageRoute(builder: (context)=>AllProductScreen()));
+      setState(() {
+
+      });
+
+    }else{
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Product Delete Failled")));
+
+
+    }
+  }
+//get product form api
+  Future<void> getProductListFormApi() async {
+    String url = "https://crud.teamrabbil.com/api/v1/ReadProduct";
+    Uri uri = Uri.parse(url);
+    http.Response response = await http.get(uri);
+    if(response.statusCode==200){
+      var value=jsonDecode(response.body);
+      allProduct=ProductListPojo.fromJson(value);
+      setState(() {
+
+      });
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: (){Navigator.push(context, MaterialPageRoute(builder: (context)=>AddProductScreen()));},
+        child: Icon(Icons.add),
+      ),
       appBar: AppBar(
         title: Text("All Product"),
       ),
       body: ListView.builder(
-          itemCount: 8,
+          itemCount: allProduct?.data?.length ?? 0,
           itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.all(10),
-          child: Column(
-
-            children: [
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            return Padding(
+              padding: EdgeInsets.all(10),
+              child: Column(
                 children: [
-                  SizedBox(height: 10,),
-                  Image.network("https://avatars.githubusercontent.com/u/136594114?v=4",height: 30,width: 30,),
-                  Column(
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Text("Product Name"),
-                      // SizedBox(height: 5,),
-                      Text("Product Code"),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Image.network(
+                        allProduct?.data?[index].img ?? "",
+                        height: 50,
+                        width: 50,
+                      ),
+                      Column(
+                        children: [
+                          Text(allProduct?.data?[index].productName ?? "",),
+                          // SizedBox(height: 5,),
+                          Text(allProduct?.data?[index].productCode ?? "",),
+                        ],
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      Text(allProduct?.data?[index].unitPrice ?? "",),
+                      Text(allProduct?.data?[index].qty ?? "",),
+                      Text(allProduct?.data?[index].totalPrice ?? "",),
+                      InkWell(
+                        onTap: (){
+                          deleteProductFormApi(allProduct?.data?[index].sId??"");
+                        },
+                        child: Icon(
+                          Icons.delete,
+                          color: Colors.green,
+                          size: 15,
+                        ),
+                      ),
+                      Icon(
+                        Icons.edit,
+                        color: Colors.green,
+                        size: 15,
+                      ),
                     ],
-                  ),
-                  SizedBox(height: 10,),
-                  Text("Unit Price"),
-                  Text("Quantity"),
-                  Text("Total Price"),
-                  Icon(Icons.delete,color: Colors.green,size: 15,),
-                  Icon(Icons.edit,color: Colors.green,size: 15,),
-
-
+                  )
                 ],
-              )
-
-            ],
-          ),
-        );
-      }),
+              ),
+            );
+          }),
     );
   }
 }
@@ -102,13 +161,13 @@ class Data {
 
   Data(
       {this.sId,
-        this.productName,
-        this.productCode,
-        this.img,
-        this.unitPrice,
-        this.qty,
-        this.totalPrice,
-        this.createdDate});
+      this.productName,
+      this.productCode,
+      this.img,
+      this.unitPrice,
+      this.qty,
+      this.totalPrice,
+      this.createdDate});
 
   Data.fromJson(Map<String, dynamic> json) {
     sId = json['_id'];
